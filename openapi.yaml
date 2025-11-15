@@ -1,0 +1,77 @@
+openapi: 3.0.0
+info:
+  title: Silver Arrow API
+  description: API to get the latest crypto prices from our streamer.
+  version: 1.0.0
+paths:
+  /api/v1/latest-price:
+    get:
+      summary: Get the latest price for ETHUSDT
+      operationId: getLatestPrice
+      responses:
+        '200':
+          description: Successful price retrieval
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LatestPriceResponse'
+        '202':
+          description: Price is not available yet, streamer is warming up.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceNotAvailableResponse'
+  /health:
+    get:
+      summary: Health check endpoint
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+components:
+  schemas:
+    LatestPriceResponse:
+      type: object
+      properties:
+        symbol:
+          type: string
+          example: 'ETHUSDT'
+        latest-price:
+          type: number
+          format: double
+          example: 3005.20
+        base-volume:
+          type: number
+          format: double
+          example: 50234.12
+      required:
+        - symbol
+        - latest-price
+        - base-volume
+
+    PriceNotAvailableResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: 'no price avaliable yet'
+        symbol:
+          type: string
+          example: 'ETHUSDT'
+      required:
+        - message
+        - symbol
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: 'ok'
+      required:
+        - status
