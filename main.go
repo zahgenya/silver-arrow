@@ -73,7 +73,6 @@ func main() {
 	go func() {
 		router := gin.Default()
 
-		// --- Swagger Routes (from File 1) ---
 		router.GET("/openapi.yaml", func(c *gin.Context) {
 			c.File("./openapi.yaml")
 		})
