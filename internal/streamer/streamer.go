@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 	"strconv"
+	"log"
 
 	binanceCon "github.com/binance/binance-connector-go"
 	"silver-arrow/api"
@@ -28,12 +29,17 @@ func StartMiniTickerStream(symbol string, duration time.Duration, coin *api.Coin
 		fmt.Printf("Symbol: %s | Last Price (c): %s | Base Volume (v): %s\n",
 			event.Symbol, event.LastPrice, event.BaseVolume)
 
-		lastPrice, err1 := strconv.ParseFloat(event.LastPrice, 64)
-        baseVol, err2 := strconv.ParseFloat(event.BaseVolume, 64)
-        if err1 != nil || err2 != nil {
-            fmt.Printf("parse error: %v %v\n", err1, err2)
-            return
-        }
+		lastPrice, err := strconv.ParseFloat(event.LastPrice, 64)
+		if err != nil {
+    		log.Printf("ERROR: [%s] Price parsing failed: %v. Raw value: %q", event.Symbol, err, event.LastPrice)
+    		return
+		}
+
+		baseVol, err := strconv.ParseFloat(event.BaseVolume, 64)
+		if err != nil {
+    		log.Printf("ERROR: [%s] Volume parsing failed: %v. Raw value: %q", event.Symbol, err, event.BaseVolume)
+    		return
+		}
 		coin.Set(lastPrice, baseVol)
 	}
 
