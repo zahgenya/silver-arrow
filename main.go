@@ -4,17 +4,23 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
+
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
 
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
 	"silver-arrow/api"
 	"silver-arrow/internal/streamer"
-
-	"github.com/gin-gonic/gin"
 )
+
+//go:generate go tool oapi-codegen --config=codegen.yaml openapi.yaml
 
 const (
 	StreamDuration = 30 * time.Second
@@ -67,19 +73,23 @@ func main() {
 	go func() {
 		router := gin.Default()
 
-		apiV1 := router.Group("/api/v1")
-		{
-			ethCoin := coinPricesMap["ETHUSDT"]
-			apiV1.GET("/latest-price", api.GetLatestPrice(ethCoin))
-		}
-
-		router.GET("/health", func(c *gin.Context) {
-			c.JSON(http.StatusOK, gin.H{"status": "ok"})
+		router.GET("/openapi.yaml", func(c *gin.Context) {
+			c.File("./openapi.yaml")
 		})
 
-		fmt.Println("Server listening on http://localhost" + APIPort)
+		router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler,
+			ginSwagger.URL("/openapi.yaml"),
+		))
 
-		if err := router.Run(APIPort); err != nil {
+		ethPrices := coinPricesMap["ETHUSDT"]
+		apiHandler := api.NewApiHandler(ethPrices)
+
+		api.RegisterHandlers(router, apiHandler)
+
+		fmt.Println("Server listening on http://localhost" + APIPort)
+		fmt.Println("Swagger UI available at http://localhost" + APIPort + "/swagger/index.html")
+
+		if err := router.Run(APIPort); err != nil && err != http.ErrServerClosed {
 			fmt.Printf("API server error: %v\n", err)
 			cancel()
 		}

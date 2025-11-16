@@ -1,0 +1,5 @@
+package: api
+generate:
+  - types
+  - gin
+output: api/api.gen.go
