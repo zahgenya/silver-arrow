@@ -13,11 +13,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/joho/godotenv"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"silver-arrow/api"
 	"silver-arrow/internal/streamer"
+	"silver-arrow/internal/telegram"
 )
 
 //go:generate go tool oapi-codegen --config=codegen.yaml openapi.yaml
@@ -28,6 +30,12 @@ const (
 )
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		fmt.Printf("Error loading .env file: %v\n", err)
+		return
+	}
+	//later change it to config struct pointer or something like that
+	apiKey := os.Getenv("TELEGRAM_URL")
 	symbols := []string{"ETHUSDT", "SOLUSDT"}
 	var wg sync.WaitGroup
 
@@ -92,6 +100,16 @@ func main() {
 		if err := router.Run(APIPort); err != nil && err != http.ErrServerClosed {
 			fmt.Printf("API server error: %v\n", err)
 			cancel()
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := telegram.StartTelegramPoll(apiKey)
+		if err != nil {
+			fmt.Printf("Error starting poll for telegram: %v\n", err)
+			return
 		}
 	}()
 
